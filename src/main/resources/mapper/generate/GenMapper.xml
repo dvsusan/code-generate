@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+		PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+		"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.sue.generate.mapper.GenMapper">
+
+	<resultMap id="TableInfoResult" type="com.sue.generate.domain.TableInfo">
+		<id     property="tableName"      column="table_name"      />
+		<result property="tableComment"   column="table_comment"   />
+		<result property="createTime"     column="create_time"     />
+		<result property="updateTime"     column="update_time"     />
+	</resultMap>
+
+	<resultMap id="ColumnInfoResult" type="com.sue.generate.domain.ColumnInfo">
+		<id     property="columnName"     column="column_name"      />
+		<result property="dataType"       column="data_type"        />
+		<result property="columnComment"  column="column_comment"   />
+	</resultMap>
+
+	<sql id="selectGenVo">
+        select table_name, table_comment, create_time, update_time from information_schema.tables
+    </sql>
+
+	<select id="selectTableList" parameterType="com.sue.generate.domain.TableInfo" resultMap="TableInfoResult">
+		<include refid="selectGenVo"/>
+		where table_schema = ('zc_mall_db')
+		<if test="tableName != null and tableName != ''">
+			AND table_name like concat('%', #{tableName}, '%')
+		</if>
+		<if test="tableComment != null and tableComment != ''">
+			AND table_comment like concat('%', #{tableComment}, '%')
+		</if>
+		<if test="params.beginTime != null and params.beginTime != ''">
+			and date_format(create_time,'%y%m%d') &gt;= date_format(#{params.beginTime},'%y%m%d')
+		</if>
+		<if test="params.endTime != null and params.endTime != ''">
+			and date_format(create_time,'%y%m%d') &lt;= date_format(#{params.endTime},'%y%m%d')
+		</if>
+	</select>
+
+	<select id="selectTableByName" parameterType="String" resultMap="TableInfoResult">
+		<include refid="selectGenVo"/>
+		where table_schema = #{dataBaseName}
+		and table_name = #{tableName}
+	</select>
+
+	<select id="selectTableColumnsByName" parameterType="String" resultMap="ColumnInfoResult">
+		select column_name, data_type, column_comment, extra from information_schema.columns
+        where table_name = #{tableName} and table_schema = #{dataBaseName} order by ordinal_position
+	</select>
+
+</mapper>
